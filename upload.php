@@ -8,7 +8,8 @@ if (isset($_FILES["image"]) && $_FILES["image"]["error"] === 0) {
     $allowed = [
         "jpg" => "image/jpeg",
         "jpeg" => "image/jpeg",
-        "png" => "image/png"
+        "png" => "image/png",
+        "pdf" => "application/pdf"
     ];
 
     $filename = $_FILES["image"]["name"];
@@ -34,13 +35,42 @@ if (isset($_FILES["image"]) && $_FILES["image"]["error"] === 0) {
     //on indique le chemin d'accès
     $newfilename = __DIR__ . "/uploads/$newname.$extension";
 
+    //on déplace le fichier de tmp à uploads en le renomant
     if (!move_uploaded_file($_FILES["image"]["tmp_name"], $newfilename)) {
-        die("une erruer s'est produite");
+        die("une erreur s'est produite");
     }
 
+    //on interdit l'exécution du fichier
     chmod($newfilename, 0644);
 } else {
-    die("votre image n'est pas reconnue");
+    var_dump($_FILES);
+    if (!empty($_FILES["image"]["error"])) {
+        $i = $_FILES["image"]["error"];
+        switch ($i) {
+            case 1:
+                die("Votre fichier est trop volumineux");
+                break;
+            case 2:
+                die("Votre fichier est trop volumineux");
+                break;
+            case 3:
+                die("Une erreur s'est produite lors de la transmission de votre fichier");
+                break;
+            case 6:
+                die("Une erreur interne s'est produite");
+                break;
+            case 7:
+                die("Une erreur interne s'est produite");
+                break;
+            case 8:
+                die("L'extension de votre fichier n'est pas valide");
+                break;
+            default:
+                die("Une erreur interne s'est produite");
+        }
+    } else {
+        die("Une erreur interne s'est produite");
+    }
 }
 ?>
 
