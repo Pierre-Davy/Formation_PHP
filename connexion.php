@@ -15,6 +15,11 @@ if (!empty($_POST)) {
     //on verifie que les champs requis soit complet
     if (isset($_POST["nickname"]) && isset($_POST["password"]) && !empty($_POST["nickname"]) && !empty($_POST["password"])) {
 
+
+        $_SESSION["error"] = [];
+
+
+
         // on se connecte à la bdd
         require_once "includes/connect.php";
 
@@ -28,28 +33,32 @@ if (!empty($_POST)) {
         $user = $query->fetch();
 
         if (!$user) {
-            die("L'utilisateur et/ou le mot de passe est incorrect");
+            $_SESSION["error"][] = "L'utilisateur et/ou le mot de passe est incorrect";
         }
 
-        //ici on a un user existant, o peut verifier le mot de passe
-        if (!password_verify($_POST["password"], $user["password"])) {
-            die("L'utilisateur et/ou le mot de passe est incorrect");
+        if ($_SESSION["error"] === []) {
+
+            //ici on a un user existant, on peut verifier le mot de passe
+            if (!password_verify($_POST["password"], $user["password"])) {
+                $_SESSION["error"][] = "L'utilisateur et/ou le mot de passe est incorrect";
+            }
+
+            // ici, l'utilisateur et le mot de passe sont correct
+            //on va pouvoir connecter l'utilisateur
+            if ($_SESSION["error"] === []) {
+
+                //on stocke dans la session les informations de l'utilisateur
+                $_SESSION["user"] = [
+                    "id" => $user["id"],
+                    "pseudo" => $user["username"],
+                    "email" => $user["email"],
+                    "roles" => $user["role"]
+                ];
+
+                //on redirige vers la page de profil
+                header("location: profil.php");
+            }
         }
-
-        // ici, l'utilisateur et le mot de passe sont correct
-        //on va pouvoir connecter l'utilisateur
-
-
-        //on stocke dans la session les informations de l'utilisateur
-        $_SESSION["user"] = [
-            "id" => $user["id"],
-            "pseudo" => $user["username"],
-            "email" => $user["email"],
-            "roles" => $user["role"]
-        ];
-
-        //on redirige vers la page de profil
-        header("location: profil.php");
     }
 }
 
@@ -61,6 +70,17 @@ include "includes/navbar.php";
 ?>
 
 <h1>Connexion</h1>
+
+<?php
+if (isset($_SESSION["error"])) {
+    foreach ($_SESSION["error"] as $message) {
+?>
+        <p style="color: red;"><?= $message ?></p>
+<?php
+    }
+    unset($_SESSION["error"]);
+}
+?>
 
 <form method="post">
     <div>

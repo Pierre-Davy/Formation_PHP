@@ -17,50 +17,59 @@ if (!empty($_POST)) {
         //le formulaire est complet
         //on récupère les données en les protégeant
         $pseudo = strip_tags($_POST["nickname"]);
+        $_SESSION["error"] = [];
+
+        if (strlen($pseudo) < 5) {
+            $_SESSION["error"][] = "Le pseudo est trop court";
+        }
 
         //on vérifie si le mail est valide
         if (!filter_var($_POST["email"], FILTER_VALIDATE_EMAIL)) {
-            die("L'adresse email est incorrecte");
+            $_SESSION["error"][] = "L'adresse email est incorrecte";
         } else {
             $email = strip_tags($_POST["email"]);
         }
 
-        //on va hasher le mot de passe
-        $pass = password_hash($_POST["password"], PASSWORD_ARGON2ID);
-
-        //on ajoute les controles de securité
+        if ($_SESSION["error"] === []) {
 
 
-        //on enregistre en base de donnée
-        require_once "includes/connect.php";
+            //on va hasher le mot de passe
+            $pass = password_hash($_POST["password"], PASSWORD_ARGON2ID);
 
-        $sql = "INSERT INTO `utilisateurs` (`username`, `email`,`password`,`role`) VALUES (:pseudo, :email, '$pass', '[\"ROLE_USER\"]')";
-
-        $query = $db->prepare($sql);
-        $query->bindValue(":pseudo", $pseudo, PDO::PARAM_STR);
-        $query->bindValue(":email", $email, PDO::PARAM_STR);
-
-        $query->execute();
-
-        //onrecupere l'id du nouvel user
-        $id = $db->lastInsertId();
+            //on ajoute les controles de securité
 
 
-        //on stocke dans la session les informations de l'utilisateur
-        $_SESSION["user"] = [
-            "id" => $id,
-            "pseudo" => $pseudo,
-            "email" => $_POST["email"],
-            "roles" => $user["ROLE_USER"]
-        ];
+            //on enregistre en base de donnée
+            require_once "includes/connect.php";
 
-        //on redirige vers la page de profil
-        header("location: profil.php");
+            $sql = "INSERT INTO `utilisateurs` (`username`, `email`,`password`,`role`) VALUES (:pseudo, :email, '$pass', '[\"ROLE_USER\"]')";
+
+            $query = $db->prepare($sql);
+            $query->bindValue(":pseudo", $pseudo, PDO::PARAM_STR);
+            $query->bindValue(":email", $email, PDO::PARAM_STR);
+
+            $query->execute();
+
+            //onrecupere l'id du nouvel user
+            $id = $db->lastInsertId();
 
 
-        echo "Vous etes enregistré";
+            //on stocke dans la session les informations de l'utilisateur
+            $_SESSION["user"] = [
+                "id" => $id,
+                "pseudo" => $pseudo,
+                "email" => $_POST["email"],
+                "roles" => $user["ROLE_USER"]
+            ];
+
+            //on redirige vers la page de profil
+            header("location: profil.php");
+
+
+            echo "Vous etes enregistré";
+        }
     } else {
-        die("Le formulaire n'est pas complet");
+        $_SESSION["error"] = ["Le formulaire est incomplet"];
     }
 }
 
@@ -73,6 +82,17 @@ include "includes/navbar.php";
 ?>
 
 <h1>Inscription</h1>
+
+<?php
+if (isset($_SESSION["error"])) {
+    foreach ($_SESSION["error"] as $message) {
+?>
+        <p style="color: red;"><?= $message ?></p>
+<?php
+    }
+    unset($_SESSION["error"]);
+}
+?>
 
 <form method="post">
     <div>
